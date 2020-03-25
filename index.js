@@ -2,7 +2,7 @@
 
 // put your own value below!
 const apiKey = 'Cta9esCA704MdiuY7jMLiDt124Fvte9IEZ3Qn6c0';
-const searchURL = 'https://developer.nps.gov/api/v1/alerts?parkCode=acad,dena';
+const searchURL = 'https://developer.nps.gov/api/v1/parks?parkCode=acad&api_key=';
 
 
 function formatQueryParams(params) {
