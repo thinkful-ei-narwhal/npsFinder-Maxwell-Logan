@@ -1,48 +1,88 @@
+// 'use strict';
+// // put your own value below!
+// const apiKey = 'Cta9esCA704MdiuY7jMLiDt124Fvte9IEZ3Qn6c0';
+// const searchURL = 'https://developer.nps.gov/api/v1/parks?parkCode=acad&api_key=Cta9esCA704MdiuY7jMLiDt124Fvte9IEZ3Qn6c0';
+
+// function fetchJSONObject() {
+
+//   let options = { method: "GET" };
+//   fetch(`https://developer.nps.gov/api/v1/parks?stateCode=CAacad&api_key=Cta9esCA704MdiuY7jMLiDt124Fvte9IEZ3Qn6c0`)
+//     .then(response => response.json())
+//     .then(responseJSONObject => console.log(responseJSONObject))
+// }
 'use strict';
 
-// put your own value below!
-const apiKey = 'Cta9esCA704MdiuY7jMLiDt124Fvte9IEZ3Qn6c0';
-const searchURL = 'https://developer.nps.gov/api/v1/parks?parkCode=acad&api_key=';
+const apiKey = 'I4Qv9YfF6bPnl9C0LBEFeTy6xEt6ZE4eSjamleQ4';
+const URL = 'https://api.nps.gov/api/v1/parks';
 
 
-function formatQueryParams(params) {
-  const queryItems = Object.keys(params)
-    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
-  return queryItems.join('&');
+function makeQuery(params) {
+  console.log(params);
+  const queryItems = Object.keys(params);
+  console.log(queryItems);
+  const newItems = queryItems.map(key => {
+    if (key === 'stateCode') {
+      let scPart = [];
+      for (let i = 0; i < params['stateCode'].length; i++) {
+        scPart.push(`${encodeURIComponent(key)}=${encodeURIComponent(params['stateCode'][i])}`);
+      }
+      return scPart.join('&');
+    } else {
+
+      return `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`;
+    }
+  }
+
+  );
+
+  console.log(newItems);
+
+  return newItems.join('&');
 }
 
-function displayResults(responseJson) {
-  // if there are previous results, remove them
-  console.log(responseJson);
-  $('#results-list').empty();
-  // iterate through the items array
-  for (let i = 0; i < responseJson.items.length; i++) {
-    // for each video object in the items 
-    //array, add a list item to the results 
-    //list with the video title, description,
-    //and thumbnail
-    $('#results-list').append(
-      `<li><h3>${responseJson.items[i].snippet.title}</h3>
-      <p>${responseJson.items[i].snippet.description}</p>
-      <img src='${responseJson.items[i].snippet.thumbnails.default.url}'>
-      </li>`
-    )
-  };
-  //display the results section  
-  $('#results').removeClass('hidden');
+// generator/render function
+
+const generateResultsHTML = function (json) {
+  console.log(json.data);
+  let generate = [];
+  json.data.forEach(el => {
+    const name = el.fullName;
+    const desc = el.description;
+    const url = el.url;
+    // can add a more complex thing to find the address later?
+
+    const htmlSnip = `
+    <div class="park">
+      <h2>${name}</h2>
+      <h3>Description</h3>
+      <p>${desc}</p>
+      <a href="${url}">${url}</a>
+    </div>
+    `;
+
+    generate.push(htmlSnip);
+  });
+
+  generate = generate.join('');
+
+  $('main').html(generate);
 };
 
-function getYouTubeVideos(query, maxResults = 10) {
-  const params = {
-    key: apiKey,
-    q: query,
-    part: 'snippet',
-    maxResults,
-    type: 'video'
-  };
-  const queryString = formatQueryParams(params)
-  const url = searchURL + '?' + queryString;
+// api stuff
 
+function getParks(query, limit = 10) { // unlike normal stuff, theres an array of states sent in by the user
+  let qArr = query.split(',');
+
+  qArr = qArr.map(el => el.trim());
+
+  const params = {
+    stateCode: qArr,
+    limit,
+    key: apiKey,
+  };
+  console.log(params);
+  const queryString = makeQuery(params);
+  const url = URL + '?' + queryString;
   console.log(url);
 
   fetch(url)
@@ -52,19 +92,21 @@ function getYouTubeVideos(query, maxResults = 10) {
       }
       throw new Error(response.statusText);
     })
-    .then(responseJson => displayResults(responseJson))
-    .catch(err => {
-      $('#js-error-message').text(`Something went wrong: ${err.message}`);
-    });
+    .then(responseJson => generateResultsHTML(responseJson))
+    .catch(err => console.log(err));
 }
 
-function watchForm() {
-  $('form').submit(event => {
+// event listener
+
+function listenerForm() {
+  $('#search-form').submit(event => {
     event.preventDefault();
-    const searchTerm = $('#js-search-term').val();
-    const maxResults = $('#js-max-results').val();
-    getYouTubeVideos(searchTerm, maxResults);
+    const searchTerm = $('#states').val();
+    const limit = $('#limit').val();
+    console.log(searchTerm);
+    console.log(limit);
+    getParks(searchTerm, limit);
   });
 }
 
-$(watchForm);
+$(listenerForm);
